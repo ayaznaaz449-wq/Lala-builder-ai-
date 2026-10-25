@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lala AI</title>
+<style>
+  body{margin:0;height:100dvh;display:flex;flex-direction:column;background:#0f0f10;color:#eee;font-family:system-ui}
+  header{padding:14px;font-weight:700;border-bottom:1px solid #222}
+  #chat{flex:1;overflow-y:auto;padding:12px}
+  .row{display:flex;margin:8px 0}
+  .u{justify-content:flex-end}
+  .b{max-width:85%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;background:#1e1e20}
+  .u .b{background:#2563eb}
+  footer{display:flex;gap:8px;padding:10px;border-top:1px solid #222}
+  input{flex:1;padding:12px;border-radius:12px;border:1px solid #333;background:#18181a;color:#eee;font-size:16px}
+  button{padding:0 18px;border-radius:12px;border:0;background:#2563eb;color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<header>Lala AI</header>
+<div id="chat"></div>
+<footer>
+  <input id="inp" placeholder="Message likho...">
+  <button id="btn">Send</button>
+</footer>
+<script>
+const chat = document.getElementById("chat");
+const inp = document.getElementById("inp");
+const btn = document.getElementById("btn");
+let messages = [];
+let loading = false;
+
+function add(role, text) {
+  const row = document.createElement("div");
+  row.className = "row " + (role === "user" ? "u" : "");
+  const b = document.createElement("div");
+  b.className = "b";
+  b.textContent = text;
+  row.appendChild(b);
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+  return b;
+}
+
+async function send() {
+  const text = inp.value.trim();
+  if (!text || loading) return;
+  inp.value = "";
+  messages.push({ role: "user", text });
+  add("user", text);
+  loading = true;
+  const wait = add("assistant", "Soch raha hoon...");
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages })
+    });
+    const data = await res.json();
+    const reply = data.reply || "Error: " + data.error;
+    wait.textContent = reply;
+    messages.push({ role: "assistant", text: reply });
+  } catch (e) {
+    wait.textContent = "Network error, dobara try karo.";
+  }
+  loading = false;
+}
+
+btn.onclick = send;
+inp.addEventListener("keydown", (e) => e.key === "Enter" && send());
+</script>
+</body>
+</html>
